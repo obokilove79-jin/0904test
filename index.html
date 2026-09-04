@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>랜덤 이미지 빙고 게임</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800;900&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{
+  --bg1:#0b0620; --bg2:#1a0b3d; --bg3:#05041a;
+  --neon-pink:#ff2ec4; --neon-cyan:#00f0ff; --neon-purple:#9b5cff; --neon-yellow:#ffe14d; --neon-green:#39ff8f;
+  --glass: rgba(255,255,255,0.06);
+  --glass-border: rgba(255,255,255,0.16);
+  --text:#f4f2ff;
+  --gold:#ffd54d; --silver:#d9d9e6; --bronze:#e0954f;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;height:100%;}
+body{
+  font-family:'Noto Sans KR', sans-serif;
+  color:var(--text);
+  min-height:100vh;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(155,92,255,0.35), transparent 40%),
+    radial-gradient(circle at 85% 15%, rgba(0,240,255,0.25), transparent 45%),
+    radial-gradient(circle at 50% 90%, rgba(255,46,196,0.25), transparent 45%),
+    linear-gradient(160deg, var(--bg1), var(--bg2) 55%, var(--bg3));
+  background-attachment:fixed;
+  overflow-x:hidden;
+  position:relative;
+}
+body::before{
+  content:"";
+  position:fixed; inset:0; pointer-events:none; z-index:0;
+  background-image:
+    radial-gradient(2px 2px at 10% 20%, #fff8, transparent),
+    radial-gradient(2px 2px at 80% 60%, #fff6, transparent),
+    radial-gradient(1.5px 1.5px at 40% 80%, #fff5, transparent),
+    radial-gradient(1.5px 1.5px at 60% 30%, #fff6, transparent),
+    radial-gradient(2px 2px at 90% 90%, #fff5, transparent);
+  animation: twinkle 6s linear infinite;
+  opacity:0.6;
+}
+@keyframes twinkle{ 0%,100%{opacity:.35;} 50%{opacity:.75;} }
+.title-font{font-family:'Orbitron', sans-serif;}
+h1,h2,h3{font-family:'Orbitron', sans-serif; margin:0 0 8px;}
+.screen{ position:relative; z-index:1; display:none; min-height:100vh; padding:24px; }
+.screen.active{ display:flex; flex-direction:column; align-items:center; }
+.hidden{display:none !important;}
+.glass{
+  background:var(--glass);
+  border:1px solid var(--glass-border);
+  border-radius:20px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow:0 8px 32px rgba(0,0,0,0.35);
+}
+.neon-title{
+  font-size:clamp(28px,6vw,54px);
+  font-weight:900;
+  letter-spacing:2px;
+  text-align:center;
+  background:linear-gradient(90deg, var(--neon-cyan), var(--neon-pink), var(--neon-purple), var(--neon-cyan));
+  background-size:300% auto;
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  animation: shine 5s linear infinite;
+  text-shadow:0 0 30px rgba(155,92,255,0.4);
+}
+@keyframes shine{ to{ background-position:300% center; } }
+.btn{
+  font-family:'Noto Sans KR', sans-serif;
+  cursor:pointer; border:none; border-radius:14px; padding:14px 26px;
+  font-size:17px; font-weight:700; color:#0b0620;
+  background:linear-gradient(135deg, var(--neon-cyan), var(--neon-green));
+  box-shadow:0 4px 18px rgba(0,240,255,0.35);
+  transition:transform .15s ease, box-shadow .15s ease;
+}
+.btn:hover{ transform:translateY(-2px) scale(1.02); box-shadow:0 8px 26px rgba(0,240,255,0.5);}
+.btn:active{ transform:translateY(0) scale(0.98); }
+.btn.pink{ background:linear-gradient(135deg, var(--neon-pink), var(--neon-purple)); color:#fff; box-shadow:0 4px 18px rgba(255,46,196,0.35);}
+.btn.ghost{ background:transparent; color:var(--text); border:1.5px solid var(--glass-border); box-shadow:none;}
+.btn.big{ padding:20px 40px; font-size:22px; }
+.btn:disabled{ opacity:0.4; cursor:not-allowed; transform:none; box-shadow:none; }
+.btn.small{ padding:8px 14px; font-size:13px; border-radius:10px; }
+input, select{
+  font-family:'Noto Sans KR', sans-serif;
+  padding:12px 14px; border-radius:12px; border:1.5px solid var(--glass-border);
+  background:rgba(255,255,255,0.08); color:var(--text); font-size:16px; outline:none;
+}
+input::placeholder{ color:#ffffff88; }
+input:focus, select:focus{ border-color:var(--neon-cyan); }
+.row{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; justify-content:center; }
+.col{ display:flex; flex-direction:column; gap:12px; }
+.card{ padding:22px 26px; margin:10px 0; width:100%; max-width:920px; }
+.pill-group{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+.pill{
+  padding:12px 22px; border-radius:999px; border:1.5px solid var(--glass-border);
+  background:rgba(255,255,255,0.06); cursor:pointer; font-weight:700; font-size:15px;
+  transition:all .15s ease;
+}
+.pill.selected{
+  background:linear-gradient(135deg, var(--neon-purple), var(--neon-pink));
+  border-color:transparent; box-shadow:0 0 20px rgba(155,92,255,0.6); color:#fff;
+}
+.room-code{
+  font-family:'Orbitron', sans-serif; font-size:clamp(38px,8vw,64px); font-weight:900;
+  letter-spacing:8px; color:var(--neon-yellow); text-shadow:0 0 24px rgba(255,225,77,0.6);
+}
+.student-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; max-height:260px; overflow-y:auto; width:100%; }
+.student-list li{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:10px 14px; border-radius:12px; background:rgba(255,255,255,0.05);
+  border:1px solid var(--glass-border); font-size:15px;
+}
+.dot{ width:10px; height:10px; border-radius:50%; display:inline-block; margin-right:8px; }
+.dot.on{ background:var(--neon-green); box-shadow:0 0 8px var(--neon-green); }
+.dot.off{ background:#666; }
+.imgprev-grid{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; max-height:220px; overflow-y:auto; width:100%; padding:8px; }
+.imgprev{ position:relative; width:70px; height:70px; border-radius:10px; overflow:hidden; border:2px solid var(--glass-border); }
+.imgprev img{ width:100%; height:100%; object-fit:cover; }
+.imgprev .rm{ position:absolute; top:0; right:0; background:#ff2e4d; color:#fff; border:none; width:20px; height:20px; font-size:12px; cursor:pointer; border-radius:0 0 0 8px; }
+.bingo-board{ display:grid; gap:8px; width:min(94vw, 560px); aspect-ratio:1/1; margin:14px auto; }
+.cell{
+  position:relative; border-radius:12px; overflow:hidden; border:2px solid var(--glass-border);
+  background:rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:center;
+}
+.cell img{ width:100%; height:100%; object-fit:cover; filter:saturate(0.9); transition:filter .3s ease; }
+.cell.marked img{ filter:none; }
+.cell.marked::after{
+  content:"✓"; position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  font-size:2.4em; font-weight:900; color:#fff; background:rgba(57,255,143,0.45);
+  animation: pop .35s ease;
+}
+@keyframes pop{ from{ transform:scale(0.3); opacity:0;} to{ transform:scale(1); opacity:1;} }
+.cell.line-glow{ box-shadow:0 0 18px 4px var(--neon-yellow); border-color:var(--neon-yellow); }
+.called-banner{
+  display:flex; align-items:center; gap:16px; padding:16px 24px; border-radius:18px;
+  background:linear-gradient(135deg, rgba(155,92,255,0.25), rgba(0,240,255,0.18));
+  border:1px solid var(--glass-border); width:100%; max-width:520px; justify-content:center;
+}
+.called-banner img{ width:64px; height:64px; object-fit:cover; border-radius:12px; box-shadow:0 0 20px rgba(255,225,77,0.6); animation: floatpulse 1.2s ease infinite; }
+@keyframes floatpulse{ 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.08);} }
+.history-strip{ display:flex; gap:6px; flex-wrap:wrap; max-width:900px; justify-content:center; }
+.history-strip img{ width:38px; height:38px; object-fit:cover; border-radius:8px; opacity:0.85; border:1px solid var(--glass-border); }
+.podium{ display:flex; align-items:flex-end; gap:14px; justify-content:center; margin:16px 0; }
+.podium .stand{ text-align:center; border-radius:14px 14px 0 0; padding:14px 10px; min-width:100px; font-weight:800; }
+.podium .p1{ background:linear-gradient(180deg, var(--gold), #7a5b00); height:130px; order:2; box-shadow:0 0 26px rgba(255,213,77,0.6); }
+.podium .p2{ background:linear-gradient(180deg, var(--silver), #55555f); height:100px; order:1; }
+.podium .p3{ background:linear-gradient(180deg, var(--bronze), #5c3a1a); height:80px; order:3; }
+.podium .stand .rank-num{ font-family:'Orbitron'; font-size:26px; display:block; }
+.podium .stand .name{ font-size:14px; margin-top:6px; word-break:break-all; }
+.progressbar{ width:100%; max-width:420px; height:16px; border-radius:999px; background:rgba(255,255,255,0.1); overflow:hidden; border:1px solid var(--glass-border); }
+.progressbar .fill{ height:100%; background:linear-gradient(90deg, var(--neon-cyan), var(--neon-pink)); transition:width .4s ease; }
+.modal-bg{ position:fixed; inset:0; background:rgba(0,0,0,0.65); display:flex; align-items:center; justify-content:center; z-index:50; }
+.modal{ text-align:center; padding:28px; max-width:340px; }
+#qrcode-box{ background:#fff; padding:12px; border-radius:12px; display:inline-block; margin:12px 0; }
+.link-box{ word-break:break-all; font-size:12px; background:rgba(0,0,0,0.3); padding:8px 10px; border-radius:8px; margin:8px 0; }
+.toast{ position:fixed; top:18px; left:50%; transform:translateX(-50%); background:rgba(20,10,40,0.9); border:1px solid var(--glass-border); padding:12px 22px; border-radius:12px; z-index:100; font-weight:700; opacity:0; transition:opacity .3s; pointer-events:none;}
+.toast.show{ opacity:1; }
+.badge{ font-size:12px; font-weight:700; padding:3px 9px; border-radius:999px; background:rgba(255,255,255,0.1); }
+.flex-center{ display:flex; align-items:center; justify-content:center; }
+canvas#confetti-canvas{ position:fixed; inset:0; pointer-events:none; z-index:60; }
+footer.note{ margin-top:20px; font-size:12px; opacity:0.55; text-align:center; max-width:600px; }
+@media (max-width:520px){ .room-code{ letter-spacing:4px; } }
+</style>
+</head>
+<body>
+
+<canvas id="confetti-canvas"></canvas>
+<div class="toast" id="toast"></div>
+
+<!-- ============ MODE SELECT ============ -->
+<div class="screen active" id="screen-mode">
+  <div class="glass card flex-center col" style="max-width:480px; text-align:center;">
+    <h1 class="neon-title">✨ 랜덤 이미지 빙고 ✨</h1>
+    <p style="opacity:0.8; margin-bottom:18px;">실시간 참여형 빙고 게임</p>
+    <div class="col" style="width:100%;">
+      <button class="btn big" onclick="goTeacherEntry()">🎤 강사 모드</button>
+      <button class="btn big pink" onclick="goStudentEntry()">🙋 학생 모드</button>
+    </div>
+  </div>
+  <footer class="note">본 게임은 Firebase 실시간 데이터베이스로 동작합니다. 여러 기기에서 접속하려면 이 파일을 웹에 호스팅한 주소로 접속해야 합니다.</footer>
+</div>
+
+<!-- ============ TEACHER: SETUP ============ -->
+<div class="screen" id="screen-teacher-setup">
+  <div class="glass card col">
+    <h2>🎛 강사 대시보드 - 방 만들기</h2>
+    <div class="row"><button class="btn" onclick="createRoom()">➕ 새 방 만들기</button>
+    <button class="btn ghost" onclick="showScreen('screen-mode')">← 처음으로</button></div>
+  </div>
+
+  <div class="glass card col hidden" id="teacher-config-card">
+    <div class="flex-center col">
+      <span style="opacity:0.7">방 코드</span>
+      <div class="room-code" id="room-code-display">----</div>
+      <button class="btn small ghost" onclick="openQR()">📱 입장/재입장 QR코드</button>
+    </div>
+
+    <h3 style="margin-top:18px;">1️⃣ 빙고 판 크기</h3>
+    <div class="pill-group" id="grid-size-group">
+      <div class="pill" data-val="3" onclick="selectGrid(3)">3 × 3</div>
+      <div class="pill selected" data-val="4" onclick="selectGrid(4)">4 × 4</div>
+      <div class="pill" data-val="5" onclick="selectGrid(5)">5 × 5</div>
+    </div>
+
+    <h3 style="margin-top:18px;">2️⃣ 승리 조건 (몇 빙고?)</h3>
+    <div class="pill-group" id="bingo-goal-group">
+      <div class="pill selected" data-val="1" onclick="selectGoal(1)">1 빙고</div>
+      <div class="pill" data-val="2" onclick="selectGoal(2)">2 빙고</div>
+      <div class="pill" data-val="3" onclick="selectGoal(3)">3 빙고</div>
+    </div>
+
+    <h3 style="margin-top:18px;">3️⃣ 이미지 업로드 <span class="badge" id="img-count-badge">0장</span></h3>
+    <input type="file" id="image-input" accept="image/*" multiple onchange="handleImageUpload(event)">
+    <p style="font-size:13px; opacity:0.7;">권장 이미지 수: 선택한 칸 수 이상 (예: 4×4 → 16장 이상). 부족하면 이미지가 중복 배치됩니다.</p>
+    <div class="imgprev-grid" id="image-preview"></div>
+
+    <h3 style="margin-top:18px;">4️⃣ 입장한 학생 (<span id="student-count">0</span>명)</h3>
+    <ul class="student-list" id="waiting-student-list"></ul>
+
+    <div class="row" style="margin-top:20px;">
+      <button class="btn big" id="start-game-btn" onclick="startGame()" disabled>🚀 게임 시작</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TEACHER: PLAY ============ -->
+<div class="screen" id="screen-teacher-play">
+  <div class="glass card col" style="text-align:center;">
+    <div class="row" style="justify-content:space-between; width:100%;">
+      <div>방 코드: <b id="play-room-code" style="color:var(--neon-yellow);"></b></div>
+      <button class="btn small ghost" onclick="openQR()">📱 QR</button>
+    </div>
+    <h2>🎯 다음 이미지 뽑기</h2>
+    <div class="called-banner" id="current-call-banner"><span style="opacity:0.6;">아직 뽑지 않았습니다</span></div>
+    <button class="btn big" id="draw-btn" onclick="drawNext()">🎲 다음 뽑기</button>
+    <div class="history-strip" id="history-strip"></div>
+  </div>
+
+  <div class="glass card col">
+    <h3>🏆 실시간 순위</h3>
+    <div class="podium" id="teacher-podium">
+      <div class="stand p1"><span class="rank-num">1</span><div class="name">-</div></div>
+      <div class="stand p2"><span class="rank-num">2</span><div class="name">-</div></div>
+      <div class="stand p3"><span class="rank-num">3</span><div class="name">-</div></div>
+    </div>
+  </div>
+
+  <div class="glass card col">
+    <h3>👥 학생 현황 (<span id="play-student-count">0</span>명)</h3>
+    <ul class="student-list" id="play-student-list"></ul>
+  </div>
+
+  <div class="row">
+    <button class="btn ghost" onclick="endGame()">🛑 게임 종료</button>
+  </div>
+</div>
+
+<!-- ============ STUDENT: JOIN ============ -->
+<div class="screen" id="screen-student-join">
+  <div class="glass card col flex-center" style="max-width:420px; text-align:center;">
+    <h2>🙋 학생 입장</h2>
+    <input id="join-room-input" placeholder="방 코드 4자리" maxlength="4" inputmode="numeric">
+    <input id="join-name-input" placeholder="이름 (닉네임)" maxlength="12">
+    <button class="btn big" onclick="joinRoom()">입장하기</button>
+    <button class="btn ghost" onclick="showScreen('screen-mode')">← 처음으로</button>
+    <p id="join-error" style="color:var(--neon-pink); font-weight:700;"></p>
+  </div>
+</div>
+
+<div class="screen" id="screen-student-wait">
+  <div class="glass card col flex-center" style="text-align:center;">
+    <h2>✅ 입장 완료!</h2>
+    <p>안녕하세요, <b id="wait-name-label"></b>님! 강사님이 게임을 시작할 때까지 기다려주세요.</p>
+    <div class="room-code" id="wait-room-code"></div>
+    <div class="loader" style="margin-top:10px;">⏳</div>
+  </div>
+</div>
+
+<!-- ============ STUDENT: PLAY ============ -->
+<div class="screen" id="screen-student-play">
+  <div class="glass card col" style="text-align:center;">
+    <div>방 코드: <b id="s-play-room-code" style="color:var(--neon-yellow);"></b> | <span id="s-play-name"></span></div>
+    <div class="called-banner" id="s-current-call-banner"><span style="opacity:0.6;">대기 중...</span></div>
+  </div>
+
+  <div class="podium" id="student-podium">
+    <div class="stand p1"><span class="rank-num">1</span><div class="name">-</div></div>
+    <div class="stand p2"><span class="rank-num">2</span><div class="name">-</div></div>
+    <div class="stand p3"><span class="rank-num">3</span><div class="name">-</div></div>
+  </div>
+
+  <div class="glass card col" style="text-align:center;">
+    <div id="s-my-rank-banner"></div>
+    <div>목표: <b id="s-goal-label"></b> | 완성한 줄: <b id="s-line-count">0</b></div>
+    <div class="progressbar"><div class="fill" id="s-progress-fill" style="width:0%;"></div></div>
+  </div>
+
+  <div class="bingo-board" id="bingo-board"></div>
+</div>
+
+<!-- ============ QR MODAL ============ -->
+<div class="modal-bg hidden" id="qr-modal">
+  <div class="glass modal">
+    <h3>📱 학생 입장 / 재입장 QR</h3>
+    <div id="qrcode-box"></div>
+    <div class="link-box" id="qr-link-text"></div>
+    <button class="btn small" onclick="copyLink()">🔗 링크 복사</button>
+    <br><br>
+    <button class="btn ghost small" onclick="closeQR()">닫기</button>
+  </div>
+</div>
+
+<script>
+/* =================== FIREBASE INIT =================== */
+const firebaseConfig = {
+  apiKey: "AIzaSyDK4aGiw1zRB-3L4XErO016ouxToju-pGU",
+  authDomain: "test-cf295.firebaseapp.com",
+  databaseURL: "https://test-cf295-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "test-cf295",
+  storageBucket: "test-cf295.firebasestorage.app",
+  messagingSenderId: "1007657840016",
+  appId: "1:1007657840016:web:47ff90f9147f581639d715"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+/* =================== GLOBAL STATE =================== */
+let roomCode = null;
+let isTeacher = false;
+let studentId = null;
+let studentName = null;
+let localImages = [];      // {id, src} before room created
+let gridSize = 4;
+let bingoGoal = 1;
+let myBoard = [];          // array of image ids, length gridSize*gridSize
+let myMarked = [];         // array of booleans
+let myLineCount = 0;
+let myRank = null;
+let initialCallSync = true;
+let calledImageIds = [];   // ordered list for history/current
+let imagesCache = {};      // id -> src (student side, loaded from room config)
+let audioCtx = null;
+
+/* =================== UTIL =================== */
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+function randomRoomCode(){
+  return String(Math.floor(1000 + Math.random()*9000));
+}
+function getAudioCtx(){
+  if(!audioCtx){
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  return audioCtx;
+}
+function playTone(freq, dur, delay, type){
+  try{
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.value = freq;
+    osc.connect(gain); gain.connect(ctx.destination);
+    const t0 = ctx.currentTime + (delay||0);
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.exponentialRampToValueAtTime(0.22, t0+0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+    osc.start(t0); osc.stop(t0+dur+0.02);
+  }catch(e){ /* ignore audio errors */ }
+}
+function sfxJoin(){ playTone(660,0.15,0,'triangle'); playTone(880,0.18,0.12,'triangle'); }
+function sfxCall(){ playTone(520,0.12,0,'square'); }
+function sfxMark(){ playTone(740,0.1,0,'sine'); }
+function sfxLine(){ playTone(600,0.12,0,'sawtooth'); playTone(760,0.12,0.1,'sawtooth'); playTone(960,0.18,0.2,'sawtooth'); }
+function sfxBingo(){
+  [523,659,784,1046,1318].forEach((f,i)=>playTone(f,0.28,i*0.11,'triangle'));
+}
+function sfxRank(){
+  [784,988,1174].forEach((f,i)=>playTone(f,0.22,i*0.12,'square'));
+}
+
+/* =================== CONFETTI =================== */
+const confettiCanvas = document.getElementById('confetti-canvas');
+const cctx = confettiCanvas.getContext('2d');
+let confettiParticles = [];
+function resizeConfetti(){ confettiCanvas.width = innerWidth; confettiCanvas.height = innerHeight; }
+window.addEventListener('resize', resizeConfetti); resizeConfetti();
+function fireConfetti(count){
+  const colors = ['#ff2ec4','#00f0ff','#9b5cff','#ffe14d','#39ff8f'];
+  for(let i=0;i<(count||120);i++){
+    confettiParticles.push({
+      x: Math.random()*confettiCanvas.width,
+      y: -20 - Math.random()*200,
+      vx: (Math.random()-0.5)*4,
+      vy: 2+Math.random()*4,
+      size: 4+Math.random()*6,
+      color: colors[Math.floor(Math.random()*colors.length)],
+      rot: Math.random()*360,
+      vrot: (Math.random()-0.5)*10,
+      life: 0
+    });
+  }
+}
+function confettiLoop(){
+  cctx.clearRect(0,0,confettiCanvas.width,confettiCanvas.height);
+  confettiParticles.forEach(p=>{
+    p.x += p.vx; p.y += p.vy; p.vy += 0.03; p.rot += p.vrot; p.life++;
+    cctx.save();
+    cctx.translate(p.x,p.y);
+    cctx.rotate(p.rot*Math.PI/180);
+    cctx.fillStyle = p.color;
+    cctx.fillRect(-p.size/2,-p.size/2,p.size,p.size);
+    cctx.restore();
+  });
+  confettiParticles = confettiParticles.filter(p=>p.y < confettiCanvas.height+40 && p.life < 500);
+  requestAnimationFrame(confettiLoop);
+}
+confettiLoop();
+
+/* =================== MODE ENTRY =================== */
+function goTeacherEntry(){
+  isTeacher = true;
+  showScreen('screen-teacher-setup');
+}
+function goStudentEntry(){
+  isTeacher = false;
+  const params = new URLSearchParams(location.search);
+  const urlRoom = params.get('room');
+  if(urlRoom) document.getElementById('join-room-input').value = urlRoom;
+  showScreen('screen-student-join');
+}
+
+/* =================== BOOT: check URL params + localStorage =================== */
+(function boot(){
+  const params = new URLSearchParams(location.search);
+  const mode = params.get('mode');
+  const urlRoom = params.get('room');
+  if(mode === 'student'){
+    isTeacher = false;
+    const saved = getSavedSession();
+    if(saved && (!urlRoom || saved.room === urlRoom)){
+      attemptRejoin(saved);
+    } else {
+      showScreen('screen-student-join');
+      if(urlRoom) document.getElementById('join-room-input').value = urlRoom;
+    }
+  }
+})();
+
+function getSavedSession(){
+  try{
+    const raw = localStorage.getItem('bingoSession');
+    if(!raw) return null;
+    return JSON.parse(raw);
+  }catch(e){ return null; }
+}
+function saveSession(data){
+  try{ localStorage.setItem('bingoSession', JSON.stringify(data)); }catch(e){}
+}
+function clearSession(){
+  try{ localStorage.removeItem('bingoSession'); }catch(e){}
+}
+
+/* =================== TEACHER: ROOM SETUP =================== */
+function createRoom(){
+  roomCode = randomRoomCode();
+  document.getElementById('room-code-display').textContent = roomCode;
+  document.getElementById('play-room-code').textContent = roomCode;
+  document.getElementById('teacher-config-card').classList.remove('hidden');
+
+  db.ref('rooms/'+roomCode).set({
+    config: { gridSize: gridSize, bingoGoal: bingoGoal, status: 'waiting', createdAt: firebase.database.ServerValue.TIMESTAMP },
+    images: {},
+    students: {},
+    calls: {},
+    rankCounter: 0,
+    ranking: {}
+  });
+
+  // listen for students joining (waiting room)
+  db.ref('rooms/'+roomCode+'/students').on('value', snap=>{
+    const val = snap.val() || {};
+    renderWaitingList(val);
+  });
+  toast('방이 생성되었습니다! 코드: '+roomCode);
+}
+
+function selectGrid(n){
+  gridSize = n;
+  document.querySelectorAll('#grid-size-group .pill').forEach(p=>p.classList.toggle('selected', Number(p.dataset.val)===n));
+  updateImgBadge();
+}
+function selectGoal(n){
+  bingoGoal = n;
+  document.querySelectorAll('#bingo-goal-group .pill').forEach(p=>p.classList.toggle('selected', Number(p.dataset.val)===n));
+}
+function updateImgBadge(){
+  document.getElementById('img-count-badge').textContent = localImages.length+'장 (권장 '+(gridSize*gridSize)+'장+)';
+  checkStartReady();
+}
+function handleImageUpload(evt){
+  const files = Array.from(evt.target.files || []);
+  let remaining = files.length;
+  if(remaining === 0) return;
+  files.forEach(file=>{
+    const reader = new FileReader();
+    reader.onload = e=>{
+      const img = new Image();
+      img.onload = ()=>{
+        const canvas = document.createElement('canvas');
+        const size = 240;
+        canvas.width = size; canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        const scale = Math.max(size/img.width, size/img.height);
+        const w = img.width*scale, h = img.height*scale;
+        ctx.drawImage(img, (size-w)/2, (size-h)/2, w, h);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.72);
+        const id = 'img_'+Date.now()+'_'+Math.floor(Math.random()*100000);
+        localImages.push({id, src: dataUrl});
+        renderImagePreview();
+        updateImgBadge();
+        remaining--;
+        if(remaining===0) evt.target.value='';
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+function renderImagePreview(){
+  const wrap = document.getElementById('image-preview');
+  wrap.innerHTML = '';
+  localImages.forEach((im, idx)=>{
+    const div = document.createElement('div');
+    div.className = 'imgprev';
+    div.innerHTML = '<img src="'+im.src+'"><button class="rm" onclick="removeImage('+idx+')">✕</button>';
+    wrap.appendChild(div);
+  });
+}
+function removeImage(idx){
+  localImages.splice(idx,1);
+  renderImagePreview();
+  updateImgBadge();
+}
+function renderWaitingList(studentsObj){
+  const list = document.getElementById('waiting-student-list');
+  const entries = Object.entries(studentsObj);
+  document.getElementById('student-count').textContent = entries.length;
+  list.innerHTML = '';
+  entries.sort((a,b)=>(a[1].joinedAt||0)-(b[1].joinedAt||0)).forEach(([id, s])=>{
+    const li = document.createElement('li');
+    li.innerHTML = '<span><span class="dot '+(s.connected?'on':'off')+'"></span>'+escapeHtml(s.name||'?')+'</span>';
+    list.appendChild(li);
+  });
+  checkStartReady();
+}
+function checkStartReady(){
+  const btn = document.getElementById('start-game-btn');
+  btn.disabled = !(roomCode && localImages.length>0);
+}
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function startGame(){
+  if(!roomCode) return;
+  const imagesObj = {};
+  localImages.forEach(im=> imagesObj[im.id] = im.src );
+  db.ref('rooms/'+roomCode+'/images').set(imagesObj);
+  db.ref('rooms/'+roomCode+'/config').update({ gridSize, bingoGoal, status:'playing', startedAt: firebase.database.ServerValue.TIMESTAMP });
+  showScreen('screen-teacher-play');
+  listenTeacherPlay();
+}
+
+/* =================== TEACHER: PLAY =================== */
+let allImageIds = [];
+function listenTeacherPlay(){
+  allImageIds = localImages.map(i=>i.id);
+  document.getElementById('play-room-code').textContent = roomCode;
+
+  db.ref('rooms/'+roomCode+'/calls').on('value', snap=>{
+    const val = snap.val() || {};
+    const arr = Object.values(val).sort((a,b)=>a.order-b.order);
+    calledImageIds = arr.map(c=>c.imageId);
+    renderTeacherCallUI();
+  });
+
+  db.ref('rooms/'+roomCode+'/students').on('value', snap=>{
+    renderTeacherStudentList(snap.val() || {});
+  });
+
+  db.ref('rooms/'+roomCode+'/ranking').on('value', snap=>{
+    renderPodium(snap.val() || {}, 'teacher-podium');
+  });
+}
+function imgSrc(id){
+  const found = localImages.find(i=>i.id===id);
+  return found ? found.src : '';
+}
+function renderTeacherCallUI(){
+  const banner = document.getElementById('current-call-banner');
+  if(calledImageIds.length===0){
+    banner.innerHTML = '<span style="opacity:0.6;">아직 뽑지 않았습니다</span>';
+  } else {
+    const last = calledImageIds[calledImageIds.length-1];
+    banner.innerHTML = '<img src="'+imgSrc(last)+'"><b style="font-size:20px;">방금 뽑힌 이미지! ('+calledImageIds.length+'/'+allImageIds.length+')</b>';
+  }
+  const strip = document.getElementById('history-strip');
+  strip.innerHTML = calledImageIds.map(id=>'<img src="'+imgSrc(id)+'">').join('');
+  document.getElementById('draw-btn').disabled = calledImageIds.length >= allImageIds.length;
+}
+function drawNext(){
+  const remaining = allImageIds.filter(id=>!calledImageIds.includes(id));
+  if(remaining.length===0){ toast('모든 이미지를 다 뽑았습니다!'); return; }
+  const pick = remaining[Math.floor(Math.random()*remaining.length)];
+  const order = calledImageIds.length;
+  db.ref('rooms/'+roomCode+'/calls').push({ imageId: pick, order, calledAt: firebase.database.ServerValue.TIMESTAMP });
+  sfxCall();
+}
+function renderTeacherStudentList(studentsObj){
+  const entries = Object.entries(studentsObj);
+  document.getElementById('play-student-count').textContent = entries.length;
+  const list = document.getElementById('play-student-list');
+  list.innerHTML = '';
+  entries.sort((a,b)=>{
+    const rb=b[1].rank||99, ra=a[1].rank||99;
+    if(ra!==rb) return ra-rb;
+    return (b[1].lineCount||0)-(a[1].lineCount||0);
+  }).forEach(([id,s])=>{
+    const li = document.createElement('li');
+    const rankBadge = s.rank ? '<span class="badge" style="background:linear-gradient(135deg,var(--gold),var(--bronze)); color:#3a2600;">'+s.rank+'등</span>' : '';
+    li.innerHTML = '<span><span class="dot '+(s.connected?'on':'off')+'"></span>'+escapeHtml(s.name||'?')+'</span>'+
+      '<span>'+rankBadge+' <span class="badge">'+(s.lineCount||0)+'줄</span></span>';
+    list.appendChild(li);
+  });
+}
+function renderPodium(rankingObj, containerId){
+  const el = document.getElementById(containerId);
+  const stands = el.querySelectorAll('.stand .name');
+  const map = {1:'-',2:'-',3:'-'};
+  Object.values(rankingObj).forEach(r=>{ if(r.rank) map[r.rank] = r.name; });
+  const order = [1,2,3];
+  const p1 = el.querySelector('.p1 .name'), p2 = el.querySelector('.p2 .name'), p3 = el.querySelector('.p3 .name');
+  if(p1) p1.textContent = map[1];
+  if(p2) p2.textContent = map[2];
+  if(p3) p3.textContent = map[3];
+}
+function endGame(){
+  if(!confirm('게임을 종료할까요?')) return;
+  db.ref('rooms/'+roomCode+'/config/status').set('ended');
+  toast('게임이 종료되었습니다.');
+}
+
+/* =================== QR MODAL =================== */
+let qrRendered = false;
+function openQR(){
+  if(!roomCode){ toast('먼저 방을 생성하세요.'); return; }
+  const link = location.origin + location.pathname + '?mode=student&room=' + roomCode;
+  document.getElementById('qr-link-text').textContent = link;
+  document.getElementById('qr-modal').classList.remove('hidden');
+  const box = document.getElementById('qrcode-box');
+  box.innerHTML = '';
+  try{
+    if(window.QRCode){
+      new QRCode(box, { text: link, width: 180, height: 180 });
+    } else {
+      box.innerHTML = '<div style="padding:20px;color:#333;">QR 라이브러리를 불러올 수 없습니다.<br>위 링크를 복사해 사용하세요.</div>';
+    }
+  }catch(e){
+    box.innerHTML = '<div style="padding:20px;color:#333;">QR 생성 실패. 링크를 복사해 사용하세요.</div>';
+  }
+}
+function closeQR(){ document.getElementById('qr-modal').classList.add('hidden'); }
+function copyLink(){
+  const text = document.getElementById('qr-link-text').textContent;
+  navigator.clipboard?.writeText(text).then(()=>toast('링크가 복사되었습니다!')).catch(()=>toast('복사 실패 - 직접 선택해 복사하세요.'));
+}
+
+/* =================== STUDENT: JOIN =================== */
+function joinRoom(){
+  const code = document.getElementById('join-room-input').value.trim();
+  const name = document.getElementById('join-name-input').value.trim();
+  const errEl = document.getElementById('join-error');
+  errEl.textContent = '';
+  if(!/^[0-9]{4}$/.test(code)){ errEl.textContent = '방 코드 4자리를 정확히 입력하세요.'; return; }
+  if(!name){ errEl.textContent = '이름을 입력하세요.'; return; }
+
+  db.ref('rooms/'+code).once('value').then(snap=>{
+    if(!snap.exists()){ errEl.textContent = '존재하지 않는 방 코드입니다.'; return; }
+    const roomVal = snap.val();
+    const cfg = roomVal.config || {};
+    roomCode = code;
+    studentName = name;
+    const gsize = cfg.gridSize || 4;
+    gridSize = gsize;
+    bingoGoal = cfg.bingoGoal || 1;
+    const imagesObj = roomVal.images || {};
+    imagesCache = imagesObj;
+    const imgIds = Object.keys(imagesObj);
+    if(imgIds.length===0){ errEl.textContent = '아직 강사님이 이미지를 업로드하지 않았습니다.'; return; }
+
+    const newRef = db.ref('rooms/'+code+'/students').push();
+    studentId = newRef.key;
+    myBoard = generateBoard(imgIds, gsize);
+    myMarked = new Array(myBoard.length).fill(false);
+
+    newRef.set({
+      name: studentName,
+      joinedAt: firebase.database.ServerValue.TIMESTAMP,
+      connected: true,
+      board: myBoard,
+      marked: myMarked,
+      lineCount: 0,
+      rank: null
+    });
+    newRef.onDisconnect().update({ connected: false });
+
+    saveSession({ room: roomCode, studentId, name: studentName });
+    sfxJoin();
+    enterStudentFlow(cfg.status || 'waiting');
+  }).catch(err=>{
+    errEl.textContent = '입장 중 오류가 발생했습니다.';
+  });
+}
+function generateBoard(imgIds, gsize){
+  const total = gsize*gsize;
+  let pool;
+  if(imgIds.length >= total){
+    pool = shuffle(imgIds).slice(0, total);
+  } else {
+    // repeat images randomly to fill the board
+    pool = [];
+    while(pool.length < total){ pool.push(imgIds[Math.floor(Math.random()*imgIds.length)]); }
+  }
+  return shuffle(pool);
+}
+
+/* =================== STUDENT: REJOIN =================== */
+function attemptRejoin(saved){
+  db.ref('rooms/'+saved.room).once('value').then(snap=>{
+    if(!snap.exists()){ clearSession(); showScreen('screen-student-join'); return; }
+    const roomVal = snap.val();
+    const studentsObj = roomVal.students || {};
+    if(!studentsObj[saved.studentId]){ clearSession(); showScreen('screen-student-join'); return; }
+    roomCode = saved.room;
+    studentId = saved.studentId;
+    studentName = saved.name;
+    const cfg = roomVal.config || {};
+    gridSize = cfg.gridSize || 4;
+    bingoGoal = cfg.bingoGoal || 1;
+    imagesCache = roomVal.images || {};
+    const s = studentsObj[saved.studentId];
+    myBoard = s.board || [];
+    myMarked = s.marked || new Array(myBoard.length).fill(false);
+    myLineCount = s.lineCount || 0;
+    myRank = s.rank || null;
+
+    db.ref('rooms/'+roomCode+'/students/'+studentId).update({ connected: true });
+    db.ref('rooms/'+roomCode+'/students/'+studentId).onDisconnect().update({ connected: false });
+
+    toast('다시 접속되었습니다. 이어서 진행합니다!');
+    enterStudentFlow(cfg.status || 'waiting');
+  }).catch(()=>{
+    showScreen('screen-student-join');
+  });
+}
+
+/* =================== STUDENT: FLOW =================== */
+function enterStudentFlow(status){
+  document.getElementById('wait-name-label').textContent = studentName;
+  document.getElementById('wait-room-code').textContent = roomCode;
+  document.getElementById('s-play-room-code').textContent = roomCode;
+  document.getElementById('s-play-name').textContent = studentName;
+  document.getElementById('s-goal-label').textContent = bingoGoal+' 빙고';
+
+  // listen for status changes
+  db.ref('rooms/'+roomCode+'/config/status').on('value', snap=>{
+    const st = snap.val();
+    if(st === 'playing'){
+      if(!document.getElementById('screen-student-play').classList.contains('active')){
+        showScreen('screen-student-play');
+        renderBoard();
+        listenStudentCalls();
+        listenRanking();
+      }
+    } else if(st === 'waiting'){
+      showScreen('screen-student-wait');
+    } else if(st === 'ended'){
+      toast('게임이 종료되었습니다. 수고하셨습니다!');
+    }
+  });
+
+  if(status === 'playing'){
+    showScreen('screen-student-play');
+    renderBoard();
+    listenStudentCalls();
+    listenRanking();
+  } else {
+    showScreen('screen-student-wait');
+  }
+}
+
+function renderBoard(){
+  const board = document.getElementById('bingo-board');
+  board.style.gridTemplateColumns = 'repeat('+gridSize+', 1fr)';
+  board.innerHTML = '';
+  myBoard.forEach((imgId, idx)=>{
+    const cell = document.createElement('div');
+    cell.className = 'cell' + (myMarked[idx] ? ' marked' : '');
+    cell.dataset.idx = idx;
+    const src = imagesCache[imgId] || '';
+    cell.innerHTML = '<img src="'+src+'">';
+    board.appendChild(cell);
+  });
+  updateProgress();
+}
+function checkLines(marked, gsize){
+  let count = 0;
+  for(let r=0;r<gsize;r++){
+    let full = true;
+    for(let c=0;c<gsize;c++){ if(!marked[r*gsize+c]) full=false; }
+    if(full) count++;
+  }
+  for(let c=0;c<gsize;c++){
+    let full = true;
+    for(let r=0;r<gsize;r++){ if(!marked[r*gsize+c]) full=false; }
+    if(full) count++;
+  }
+  let d1 = true, d2 = true;
+  for(let i=0;i<gsize;i++){
+    if(!marked[i*gsize+i]) d1=false;
+    if(!marked[i*gsize+(gsize-1-i)]) d2=false;
+  }
+  if(d1) count++;
+  if(d2) count++;
+  return count;
+}
+function updateProgress(){
+  document.getElementById('s-line-count').textContent = myLineCount;
+  const pct = Math.min(100, Math.round((myLineCount/bingoGoal)*100));
+  document.getElementById('s-progress-fill').style.width = pct+'%';
+}
+function listenStudentCalls(){
+  initialCallSync = true;
+  db.ref('rooms/'+roomCode+'/calls').orderByChild('order').on('child_added', snap=>{
+    const call = snap.val();
+    processCall(call.imageId, initialCallSync);
+  });
+  // after initial batch settle, flip flag
+  db.ref('rooms/'+roomCode+'/calls').once('value').then(()=>{ setTimeout(()=>{ initialCallSync = false; }, 300); });
+}
+function processCall(imageId, silent){
+  const banner = document.getElementById('s-current-call-banner');
+  const src = imagesCache[imageId] || '';
+  banner.innerHTML = '<img src="'+src+'"><b>새로운 이미지가 나왔어요!</b>';
+  let matched = false;
+  myBoard.forEach((id, idx)=>{
+    if(id === imageId && !myMarked[idx]){
+      myMarked[idx] = true;
+      matched = true;
+      const cellEl = document.querySelector('.cell[data-idx="'+idx+'"]');
+      if(cellEl) cellEl.classList.add('marked');
+    }
+  });
+  if(matched && !silent) sfxMark();
+  const newLineCount = checkLines(myMarked, gridSize);
+  const gained = newLineCount > myLineCount;
+  myLineCount = newLineCount;
+  updateProgress();
+  db.ref('rooms/'+roomCode+'/students/'+studentId).update({ marked: myMarked, lineCount: myLineCount });
+
+  if(gained && !silent) sfxLine();
+
+  if(myLineCount >= bingoGoal && !myRank){
+    claimBingo();
+  }
+}
+function claimBingo(){
+  const counterRef = db.ref('rooms/'+roomCode+'/rankCounter');
+  counterRef.transaction(cur=>(cur||0)+1).then(res=>{
+    if(!res.committed) return;
+    const myNewRank = res.snapshot.val();
+    myRank = myNewRank;
+    db.ref('rooms/'+roomCode+'/students/'+studentId).update({ rank: myNewRank, finishedAt: firebase.database.ServerValue.TIMESTAMP });
+    if(myNewRank <= 3){
+      db.ref('rooms/'+roomCode+'/ranking/'+myNewRank).set({ studentId, name: studentName, rank: myNewRank });
+      sfxBingo(); sfxRank();
+      fireConfetti(180);
+      document.getElementById('s-my-rank-banner').innerHTML = '<div class="neon-title" style="font-size:28px;">🎉 '+myNewRank+'등 달성! 🎉</div>';
+    } else {
+      document.getElementById('s-my-rank-banner').innerHTML = '<div style="font-weight:800; color:var(--neon-green);">🙌 빙고 완료! ('+myNewRank+'번째)</div>';
+      sfxBingo();
+    }
+  });
+}
+function listenRanking(){
+  db.ref('rooms/'+roomCode+'/ranking').on('value', snap=>{
+    renderPodium(snap.val() || {}, 'student-podium');
+  });
+}
+</script>
+</body>
+</html>
