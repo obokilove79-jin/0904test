@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>랜덤 이미지 빙고 게임</title>
+<title>픽셀 빙고 : 실시간 랜덤 이미지 빙고 챌린지</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800;900&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
@@ -165,6 +165,11 @@ input:focus, select:focus{ border-color:var(--neon-cyan); }
 .podium .p3{ background:linear-gradient(180deg, var(--bronze), #5c3a1a); height:80px; order:3; }
 .podium .stand .rank-num{ font-family:'Orbitron'; font-size:26px; display:block; }
 .podium .stand .name{ font-size:14px; margin-top:6px; word-break:break-all; }
+.podium .stand .name.pop{ animation: pop .3s ease; }
+.podium .stand.provisional{ opacity:0.7; border:2px dashed rgba(255,255,255,0.65); animation: standPulse 1.6s ease-in-out infinite; }
+.podium .stand.provisional .name{ font-style:italic; }
+.podium .stand.provisional .name::after{ content:" (진행중)"; font-size:10px; font-style:normal; opacity:0.85; }
+@keyframes standPulse{ 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-4px);} }
 .progressbar{ width:100%; max-width:420px; height:16px; border-radius:999px; background:rgba(150,120,190,0.16); overflow:hidden; border:1px solid var(--glass-border); }
 .progressbar .fill{ height:100%; background:linear-gradient(90deg, var(--neon-cyan), var(--neon-pink)); transition:width .4s ease; }
 .modal-bg{ position:fixed; inset:0; background:rgba(74,63,107,0.55); display:flex; align-items:center; justify-content:center; z-index:50; }
@@ -202,7 +207,6 @@ footer.note{ margin-top:20px; font-size:12px; opacity:0.55; text-align:center; m
 /* ---- hero / landing ---- */
 #screen-mode{ align-items:stretch; padding:48px 32px; }
 .hero{ max-width:760px; margin:0 auto 34px; text-align:left; }
-.hero .eyebrow{ display:block; font-family:'Orbitron', sans-serif; font-size:13px; letter-spacing:3px; color:#5cb88a; font-weight:800; margin-bottom:14px; }
 .hero-title{ font-family:'Orbitron', sans-serif; font-size:clamp(30px,5.2vw,48px); font-weight:900; line-height:1.25; margin:0 0 14px; color:var(--text); }
 .hero-title .accent{ color:#e8659a; }
 .hero-sub{ font-size:17px; color:var(--text-soft); margin:0; }
@@ -247,8 +251,7 @@ footer.note{ margin-top:20px; font-size:12px; opacity:0.55; text-align:center; m
 <!-- ============ MODE SELECT / LANDING ============ -->
 <div class="screen active" id="screen-mode">
   <div class="hero">
-    <span class="eyebrow">CLASSROOM MULTIPLAYER</span>
-    <h1 class="hero-title">한 칸씩 가까워지는<br><span class="accent">빙고의 순간.</span></h1>
+    <h1 class="hero-title">픽셀 빙고<br><span class="accent">: 실시간 랜덤 이미지 빙고 챌린지</span></h1>
     <p class="hero-sub">그림을 발견하고, 빙고를 완성하세요.</p>
   </div>
 
@@ -295,7 +298,6 @@ footer.note{ margin-top:20px; font-size:12px; opacity:0.55; text-align:center; m
     </div>
   </div>
 
-  <footer class="note">본 게임은 Firebase 실시간 데이터베이스로 동작합니다. 여러 기기에서 접속하려면 이 파일을 웹에 호스팅한 주소로 접속해야 합니다.</footer>
 </div>
 
 <!-- ============ TEACHER: SETUP ============ -->
@@ -440,6 +442,10 @@ let myRank = null;
 let initialCallSync = true;
 let calledImageIds = [];   // ordered list for history/current
 let imagesCache = {};      // id -> src (student side, loaded from room config)
+let teacherStudentsCache = {};
+let teacherRankingCache = {};
+let studentStudentsCache = {};
+let studentRankingCache = {};
 let audioCtx = null;
 
 /* =================== UTIL =================== */
@@ -718,11 +724,14 @@ function listenTeacherPlay(){
   });
 
   db.ref('rooms/'+roomCode+'/students').on('value', snap=>{
-    renderTeacherStudentList(snap.val() || {});
+    teacherStudentsCache = snap.val() || {};
+    renderTeacherStudentList(teacherStudentsCache);
+    renderLivePodium(teacherStudentsCache, teacherRankingCache, 'teacher-podium');
   });
 
   db.ref('rooms/'+roomCode+'/ranking').on('value', snap=>{
-    renderPodium(snap.val() || {}, 'teacher-podium');
+    teacherRankingCache = snap.val() || {};
+    renderLivePodium(teacherStudentsCache, teacherRankingCache, 'teacher-podium');
   });
 }
 function imgSrc(id){
@@ -779,16 +788,44 @@ function renderTeacherStudentList(studentsObj){
     list.appendChild(li);
   });
 }
-function renderPodium(rankingObj, containerId){
+function renderLivePodium(studentsObj, rankingObj, containerId){
   const el = document.getElementById(containerId);
-  const stands = el.querySelectorAll('.stand .name');
-  const map = {1:'-',2:'-',3:'-'};
-  Object.values(rankingObj).forEach(r=>{ if(r.rank) map[r.rank] = r.name; });
-  const order = [1,2,3];
-  const p1 = el.querySelector('.p1 .name'), p2 = el.querySelector('.p2 .name'), p3 = el.querySelector('.p3 .name');
-  if(p1) p1.textContent = map[1];
-  if(p2) p2.textContent = map[2];
-  if(p3) p3.textContent = map[3];
+  if(!el) return;
+  const locked = {};
+  Object.values(rankingObj || {}).forEach(r=>{ if(r && r.rank) locked[r.rank] = r.name; });
+
+  const candidates = Object.values(studentsObj || {})
+    .filter(s => !(s.rank && s.rank <= 3))
+    .sort((a,b)=>{
+      const lb = b.lineCount||0, la = a.lineCount||0;
+      if(la !== lb) return lb - la;
+      return (a.joinedAt||0) - (b.joinedAt||0);
+    });
+
+  let ci = 0;
+  for(let r=1; r<=3; r++){
+    const standEl = el.querySelector('.p'+r);
+    const nameEl = standEl ? standEl.querySelector('.name') : null;
+    if(!nameEl) continue;
+    let display = '-', provisional = false;
+    if(locked[r]){
+      display = locked[r];
+    } else {
+      while(ci < candidates.length && !(candidates[ci].lineCount > 0)) ci++;
+      if(ci < candidates.length){
+        display = candidates[ci].name;
+        provisional = true;
+        ci++;
+      }
+    }
+    if(nameEl.textContent !== display){
+      nameEl.textContent = display;
+      nameEl.classList.remove('pop');
+      void nameEl.offsetWidth;
+      nameEl.classList.add('pop');
+    }
+    standEl.classList.toggle('provisional', provisional);
+  }
 }
 function endGame(){
   if(!confirm('게임을 종료할까요?')) return;
@@ -1059,8 +1096,13 @@ function claimBingo(){
   });
 }
 function listenRanking(){
+  db.ref('rooms/'+roomCode+'/students').on('value', snap=>{
+    studentStudentsCache = snap.val() || {};
+    renderLivePodium(studentStudentsCache, studentRankingCache, 'student-podium');
+  });
   db.ref('rooms/'+roomCode+'/ranking').on('value', snap=>{
-    renderPodium(snap.val() || {}, 'student-podium');
+    studentRankingCache = snap.val() || {};
+    renderLivePodium(studentStudentsCache, studentRankingCache, 'student-podium');
   });
 }
 </script>
