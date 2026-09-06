@@ -11,12 +11,14 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 :root{
-  --bg1:#0b0620; --bg2:#1a0b3d; --bg3:#05041a;
-  --neon-pink:#ff2ec4; --neon-cyan:#00f0ff; --neon-purple:#9b5cff; --neon-yellow:#ffe14d; --neon-green:#39ff8f;
-  --glass: rgba(255,255,255,0.06);
-  --glass-border: rgba(255,255,255,0.16);
-  --text:#f4f2ff;
-  --gold:#ffd54d; --silver:#d9d9e6; --bronze:#e0954f;
+  --bg1:#fff8f0; --bg2:#ffeef5; --bg3:#eaf6ff;
+  --neon-pink:#ff8fbf; --neon-cyan:#6ec9f2; --neon-purple:#b2a1f7; --neon-yellow:#ffcf5c; --neon-green:#7be0b0;
+  --glass: rgba(255,255,255,0.6);
+  --glass-border: rgba(150,120,190,0.22);
+  --text:#4a3f6b;
+  --text-soft:#7b7098;
+  --gold:#ffd166; --silver:#c9c3e0; --bronze:#f2a468;
+  --lime:#c8e86a;
 }
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;height:100%;}
@@ -25,9 +27,9 @@ body{
   color:var(--text);
   min-height:100vh;
   background:
-    radial-gradient(circle at 15% 20%, rgba(155,92,255,0.35), transparent 40%),
-    radial-gradient(circle at 85% 15%, rgba(0,240,255,0.25), transparent 45%),
-    radial-gradient(circle at 50% 90%, rgba(255,46,196,0.25), transparent 45%),
+    radial-gradient(circle at 15% 20%, rgba(178,161,247,0.30), transparent 40%),
+    radial-gradient(circle at 85% 15%, rgba(110,201,242,0.28), transparent 45%),
+    radial-gradient(circle at 50% 90%, rgba(255,143,191,0.28), transparent 45%),
     linear-gradient(160deg, var(--bg1), var(--bg2) 55%, var(--bg3));
   background-attachment:fixed;
   overflow-x:hidden;
@@ -37,15 +39,15 @@ body::before{
   content:"";
   position:fixed; inset:0; pointer-events:none; z-index:0;
   background-image:
-    radial-gradient(2px 2px at 10% 20%, #fff8, transparent),
-    radial-gradient(2px 2px at 80% 60%, #fff6, transparent),
-    radial-gradient(1.5px 1.5px at 40% 80%, #fff5, transparent),
-    radial-gradient(1.5px 1.5px at 60% 30%, #fff6, transparent),
-    radial-gradient(2px 2px at 90% 90%, #fff5, transparent);
+    radial-gradient(5px 5px at 10% 20%, rgba(255,207,92,0.5), transparent),
+    radial-gradient(5px 5px at 80% 60%, rgba(123,224,176,0.5), transparent),
+    radial-gradient(4px 4px at 40% 80%, rgba(255,143,191,0.5), transparent),
+    radial-gradient(4px 4px at 60% 30%, rgba(178,161,247,0.5), transparent),
+    radial-gradient(5px 5px at 90% 90%, rgba(110,201,242,0.5), transparent);
   animation: twinkle 6s linear infinite;
-  opacity:0.6;
+  opacity:0.7;
 }
-@keyframes twinkle{ 0%,100%{opacity:.35;} 50%{opacity:.75;} }
+@keyframes twinkle{ 0%,100%{opacity:.4;} 50%{opacity:.8;} }
 .title-font{font-family:'Orbitron', sans-serif;}
 h1,h2,h3{font-family:'Orbitron', sans-serif; margin:0 0 8px;}
 .screen{ position:relative; z-index:1; display:none; min-height:100vh; padding:24px; }
@@ -57,7 +59,7 @@ h1,h2,h3{font-family:'Orbitron', sans-serif; margin:0 0 8px;}
   border-radius:20px;
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  box-shadow:0 8px 32px rgba(0,0,0,0.35);
+  box-shadow:0 8px 28px rgba(150,120,190,0.18);
 }
 .neon-title{
   font-size:clamp(28px,6vw,54px);
@@ -68,30 +70,30 @@ h1,h2,h3{font-family:'Orbitron', sans-serif; margin:0 0 8px;}
   background-size:300% auto;
   -webkit-background-clip:text; background-clip:text; color:transparent;
   animation: shine 5s linear infinite;
-  text-shadow:0 0 30px rgba(155,92,255,0.4);
+  text-shadow:0 0 24px rgba(178,161,247,0.35);
 }
 @keyframes shine{ to{ background-position:300% center; } }
 .btn{
   font-family:'Noto Sans KR', sans-serif;
   cursor:pointer; border:none; border-radius:14px; padding:14px 26px;
-  font-size:17px; font-weight:700; color:#0b0620;
+  font-size:17px; font-weight:700; color:#2d2650;
   background:linear-gradient(135deg, var(--neon-cyan), var(--neon-green));
-  box-shadow:0 4px 18px rgba(0,240,255,0.35);
+  box-shadow:0 4px 16px rgba(110,201,242,0.4);
   transition:transform .15s ease, box-shadow .15s ease;
 }
-.btn:hover{ transform:translateY(-2px) scale(1.02); box-shadow:0 8px 26px rgba(0,240,255,0.5);}
+.btn:hover{ transform:translateY(-2px) scale(1.02); box-shadow:0 8px 22px rgba(110,201,242,0.5);}
 .btn:active{ transform:translateY(0) scale(0.98); }
-.btn.pink{ background:linear-gradient(135deg, var(--neon-pink), var(--neon-purple)); color:#fff; box-shadow:0 4px 18px rgba(255,46,196,0.35);}
-.btn.ghost{ background:transparent; color:var(--text); border:1.5px solid var(--glass-border); box-shadow:none;}
+.btn.pink{ background:linear-gradient(135deg, var(--neon-pink), var(--neon-purple)); color:#3a2a4d; box-shadow:0 4px 16px rgba(255,143,191,0.4);}
+.btn.ghost{ background:rgba(255,255,255,0.5); color:var(--text); border:1.5px solid var(--glass-border); box-shadow:none;}
 .btn.big{ padding:20px 40px; font-size:22px; }
 .btn:disabled{ opacity:0.4; cursor:not-allowed; transform:none; box-shadow:none; }
 .btn.small{ padding:8px 14px; font-size:13px; border-radius:10px; }
 input, select{
   font-family:'Noto Sans KR', sans-serif;
   padding:12px 14px; border-radius:12px; border:1.5px solid var(--glass-border);
-  background:rgba(255,255,255,0.08); color:var(--text); font-size:16px; outline:none;
+  background:rgba(255,255,255,0.75); color:var(--text); font-size:16px; outline:none;
 }
-input::placeholder{ color:#ffffff88; }
+input::placeholder{ color:#9791b3aa; }
 input:focus, select:focus{ border-color:var(--neon-cyan); }
 .row{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; justify-content:center; }
 .col{ display:flex; flex-direction:column; gap:12px; }
@@ -99,26 +101,26 @@ input:focus, select:focus{ border-color:var(--neon-cyan); }
 .pill-group{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
 .pill{
   padding:12px 22px; border-radius:999px; border:1.5px solid var(--glass-border);
-  background:rgba(255,255,255,0.06); cursor:pointer; font-weight:700; font-size:15px;
+  background:rgba(255,255,255,0.55); cursor:pointer; font-weight:700; font-size:15px; color:var(--text);
   transition:all .15s ease;
 }
 .pill.selected{
   background:linear-gradient(135deg, var(--neon-purple), var(--neon-pink));
-  border-color:transparent; box-shadow:0 0 20px rgba(155,92,255,0.6); color:#fff;
+  border-color:transparent; box-shadow:0 0 18px rgba(178,161,247,0.55); color:#3a2a4d;
 }
 .room-code{
   font-family:'Orbitron', sans-serif; font-size:clamp(38px,8vw,64px); font-weight:900;
-  letter-spacing:8px; color:var(--neon-yellow); text-shadow:0 0 24px rgba(255,225,77,0.6);
+  letter-spacing:8px; color:#e8659a; text-shadow:0 0 20px rgba(255,143,191,0.45);
 }
 .student-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; max-height:260px; overflow-y:auto; width:100%; }
 .student-list li{
   display:flex; align-items:center; justify-content:space-between; gap:10px;
-  padding:10px 14px; border-radius:12px; background:rgba(255,255,255,0.05);
+  padding:10px 14px; border-radius:12px; background:rgba(255,255,255,0.55);
   border:1px solid var(--glass-border); font-size:15px;
 }
 .dot{ width:10px; height:10px; border-radius:50%; display:inline-block; margin-right:8px; }
 .dot.on{ background:var(--neon-green); box-shadow:0 0 8px var(--neon-green); }
-.dot.off{ background:#666; }
+.dot.off{ background:#c9c2dd; }
 .imgprev-grid{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; max-height:220px; overflow-y:auto; width:100%; padding:8px; }
 .imgprev{ position:relative; width:70px; height:70px; border-radius:10px; overflow:hidden; border:2px solid var(--glass-border); }
 .imgprev img{ width:100%; height:100%; object-fit:cover; }
@@ -126,26 +128,36 @@ input:focus, select:focus{ border-color:var(--neon-cyan); }
 .bingo-board{ display:grid; gap:8px; width:min(94vw, 560px); aspect-ratio:1/1; margin:14px auto; }
 .cell{
   position:relative; border-radius:12px; overflow:hidden; border:2px solid var(--glass-border);
-  background:rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:center;
+  background:rgba(255,255,255,0.5); display:flex; align-items:center; justify-content:center;
 }
 .cell img{ width:100%; height:100%; object-fit:cover; filter:saturate(0.9); transition:filter .3s ease; }
 .cell.marked img{ filter:none; }
 .cell.marked::after{
   content:"✓"; position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-  font-size:2.4em; font-weight:900; color:#fff; background:rgba(57,255,143,0.45);
+  font-size:2.4em; font-weight:900; color:#fff; background:rgba(123,224,176,0.55);
   animation: pop .35s ease;
 }
 @keyframes pop{ from{ transform:scale(0.3); opacity:0;} to{ transform:scale(1); opacity:1;} }
 .cell.line-glow{ box-shadow:0 0 18px 4px var(--neon-yellow); border-color:var(--neon-yellow); }
 .called-banner{
   display:flex; align-items:center; gap:16px; padding:16px 24px; border-radius:18px;
-  background:linear-gradient(135deg, rgba(155,92,255,0.25), rgba(0,240,255,0.18));
+  background:linear-gradient(135deg, rgba(178,161,247,0.35), rgba(110,201,242,0.3));
   border:1px solid var(--glass-border); width:100%; max-width:520px; justify-content:center;
 }
-.called-banner img{ width:64px; height:64px; object-fit:cover; border-radius:12px; box-shadow:0 0 20px rgba(255,225,77,0.6); animation: floatpulse 1.2s ease infinite; }
+.called-banner img{ width:64px; height:64px; object-fit:cover; border-radius:12px; box-shadow:0 0 20px rgba(255,207,92,0.55); animation: floatpulse 1.2s ease infinite; }
 @keyframes floatpulse{ 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.08);} }
 .history-strip{ display:flex; gap:6px; flex-wrap:wrap; max-width:900px; justify-content:center; }
 .history-strip img{ width:38px; height:38px; object-fit:cover; border-radius:8px; opacity:0.85; border:1px solid var(--glass-border); }
+.teacher-image-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(84px,1fr)); gap:12px; width:100%; max-width:820px; margin:14px 0; }
+.teacher-tile{ position:relative; border-radius:14px; overflow:hidden; border:2px solid var(--glass-border); cursor:pointer; aspect-ratio:1/1; transition:transform .15s ease, box-shadow .15s ease; }
+.teacher-tile img{ width:100%; height:100%; object-fit:cover; display:block; }
+.teacher-tile:hover:not(.called){ transform:translateY(-3px) scale(1.04); box-shadow:0 0 18px rgba(110,201,242,0.55); border-color:var(--neon-cyan); }
+.teacher-tile.called{ cursor:default; opacity:0.4; filter:grayscale(0.5); }
+.teacher-tile.called::after{ content:"✓ " attr(data-order); position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:1.1em; background:rgba(74,63,107,0.5); color:#fff; }
+.cell.callable{ cursor:pointer; animation: pulseGlow 1s ease infinite; }
+@keyframes pulseGlow{ 0%,100%{ box-shadow:0 0 8px 2px var(--neon-cyan);} 50%{ box-shadow:0 0 20px 6px var(--neon-cyan);} }
+.cell.wrong-shake{ animation: shakeCell .35s ease; }
+@keyframes shakeCell{ 0%,100%{ transform:translateX(0);} 25%{ transform:translateX(-6px);} 75%{ transform:translateX(6px);} }
 .podium{ display:flex; align-items:flex-end; gap:14px; justify-content:center; margin:16px 0; }
 .podium .stand{ text-align:center; border-radius:14px 14px 0 0; padding:14px 10px; min-width:100px; font-weight:800; }
 .podium .p1{ background:linear-gradient(180deg, var(--gold), #7a5b00); height:130px; order:2; box-shadow:0 0 26px rgba(255,213,77,0.6); }
@@ -153,19 +165,70 @@ input:focus, select:focus{ border-color:var(--neon-cyan); }
 .podium .p3{ background:linear-gradient(180deg, var(--bronze), #5c3a1a); height:80px; order:3; }
 .podium .stand .rank-num{ font-family:'Orbitron'; font-size:26px; display:block; }
 .podium .stand .name{ font-size:14px; margin-top:6px; word-break:break-all; }
-.progressbar{ width:100%; max-width:420px; height:16px; border-radius:999px; background:rgba(255,255,255,0.1); overflow:hidden; border:1px solid var(--glass-border); }
+.progressbar{ width:100%; max-width:420px; height:16px; border-radius:999px; background:rgba(150,120,190,0.16); overflow:hidden; border:1px solid var(--glass-border); }
 .progressbar .fill{ height:100%; background:linear-gradient(90deg, var(--neon-cyan), var(--neon-pink)); transition:width .4s ease; }
-.modal-bg{ position:fixed; inset:0; background:rgba(0,0,0,0.65); display:flex; align-items:center; justify-content:center; z-index:50; }
+.modal-bg{ position:fixed; inset:0; background:rgba(74,63,107,0.55); display:flex; align-items:center; justify-content:center; z-index:50; }
 .modal{ text-align:center; padding:28px; max-width:340px; }
 #qrcode-box{ background:#fff; padding:12px; border-radius:12px; display:inline-block; margin:12px 0; }
-.link-box{ word-break:break-all; font-size:12px; background:rgba(0,0,0,0.3); padding:8px 10px; border-radius:8px; margin:8px 0; }
-.toast{ position:fixed; top:18px; left:50%; transform:translateX(-50%); background:rgba(20,10,40,0.9); border:1px solid var(--glass-border); padding:12px 22px; border-radius:12px; z-index:100; font-weight:700; opacity:0; transition:opacity .3s; pointer-events:none;}
+.link-box{ word-break:break-all; font-size:12px; background:rgba(74,63,107,0.08); padding:8px 10px; border-radius:8px; margin:8px 0; color:var(--text); }
+.toast{ position:fixed; top:18px; left:50%; transform:translateX(-50%); background:rgba(74,63,107,0.92); color:#fff; border:1px solid var(--glass-border); padding:12px 22px; border-radius:12px; z-index:100; font-weight:700; opacity:0; transition:opacity .3s; pointer-events:none;}
 .toast.show{ opacity:1; }
-.badge{ font-size:12px; font-weight:700; padding:3px 9px; border-radius:999px; background:rgba(255,255,255,0.1); }
+.badge{ font-size:12px; font-weight:700; padding:3px 9px; border-radius:999px; background:rgba(74,63,107,0.1); }
 .flex-center{ display:flex; align-items:center; justify-content:center; }
 canvas#confetti-canvas{ position:fixed; inset:0; pointer-events:none; z-index:60; }
 footer.note{ margin-top:20px; font-size:12px; opacity:0.55; text-align:center; max-width:600px; }
-@media (max-width:520px){ .room-code{ letter-spacing:4px; } }
+
+/* ---- top bar ---- */
+.topbar{
+  position:sticky; top:0; z-index:40;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:18px 32px; background:rgba(255,255,255,0.65);
+  border-bottom:1px solid var(--glass-border);
+  backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+}
+.topbar .logo{ font-family:'Orbitron', sans-serif; font-weight:900; font-size:20px; letter-spacing:1px; color:var(--text); }
+.topbar .logo .colon{ color:#a89ccb; margin:0 2px; }
+.topbar .logo .live{ color:#e8659a; }
+.topbar-right{ display:flex; align-items:center; gap:16px; }
+.conn-status{ display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-soft); }
+.conn-status .dot{ width:8px; height:8px; border-radius:50%; background:#c9c2dd; }
+.conn-status .dot.on{ background:var(--neon-green); box-shadow:0 0 8px var(--neon-green); }
+.sound-btn{
+  font-family:'Noto Sans KR', sans-serif; cursor:pointer; border:1px solid var(--glass-border);
+  background:rgba(255,255,255,0.7); color:var(--text); padding:9px 18px; border-radius:999px; font-size:14px; font-weight:700;
+}
+.sound-btn:hover{ border-color:var(--neon-cyan); }
+
+/* ---- hero / landing ---- */
+#screen-mode{ align-items:stretch; padding:48px 32px; }
+.hero{ max-width:760px; margin:0 auto 34px; text-align:left; }
+.hero .eyebrow{ display:block; font-family:'Orbitron', sans-serif; font-size:13px; letter-spacing:3px; color:#5cb88a; font-weight:800; margin-bottom:14px; }
+.hero-title{ font-family:'Orbitron', sans-serif; font-size:clamp(30px,5.2vw,48px); font-weight:900; line-height:1.25; margin:0 0 14px; color:var(--text); }
+.hero-title .accent{ color:#e8659a; }
+.hero-sub{ font-size:17px; color:var(--text-soft); margin:0; }
+.mode-cards{ display:flex; gap:24px; flex-wrap:wrap; max-width:1120px; margin:0 auto; width:100%; justify-content:center; }
+.mode-card{ flex:1 1 380px; max-width:480px; padding:32px; text-align:left; }
+.role-badge{ display:inline-block; padding:5px 16px; border-radius:999px; font-size:12px; font-weight:800; letter-spacing:1px; border:1.5px solid var(--glass-border); color:var(--text-soft); margin-bottom:16px; }
+.role-badge.host{ border-color:#8fce6a; color:#5cad3d; }
+.role-badge.player{ border-color:var(--neon-purple); color:#8a6fd9; }
+.mode-card h3{ font-size:24px; margin:0 0 8px; color:var(--text); }
+.card-desc{ color:var(--text-soft); font-size:14px; margin:0 0 22px; }
+.field-label{ display:block; font-size:13px; color:var(--text-soft); margin:14px 0 8px; font-weight:700; }
+.select-wrap{ position:relative; width:100%; }
+.select-wrap select{
+  width:100%; appearance:none; -webkit-appearance:none; -moz-appearance:none;
+  background:rgba(255,255,255,0.8); border:1.5px solid var(--glass-border); border-radius:12px;
+  padding:14px 40px 14px 16px; font-size:16px; color:var(--text); cursor:pointer;
+}
+.select-wrap::after{
+  content:"▾"; position:absolute; right:16px; top:50%; transform:translateY(-50%);
+  color:var(--text-soft); pointer-events:none; font-size:14px;
+}
+.mode-card input{ width:100%; background:rgba(255,255,255,0.8); }
+.btn.lime{ background:var(--lime); color:#3d5a1a; box-shadow:0 4px 16px rgba(200,232,106,0.5); }
+.btn.purple{ background:linear-gradient(135deg, var(--neon-purple), #9b7fe0); color:#fff; box-shadow:0 4px 16px rgba(178,161,247,0.5); }
+.error-text{ color:#e8557a; font-weight:700; font-size:13px; min-height:18px; margin-top:10px; }
+@media (max-width:520px){ .room-code{ letter-spacing:4px; } .topbar{ padding:14px 18px; } #screen-mode{ padding:28px 16px; } }
 </style>
 </head>
 <body>
@@ -173,28 +236,71 @@ footer.note{ margin-top:20px; font-size:12px; opacity:0.55; text-align:center; m
 <canvas id="confetti-canvas"></canvas>
 <div class="toast" id="toast"></div>
 
-<!-- ============ MODE SELECT ============ -->
+<header class="topbar">
+  <div class="logo">BINGO<span class="colon">:</span><span class="live">LIVE</span></div>
+  <div class="topbar-right">
+    <span class="conn-status"><span class="dot" id="conn-dot"></span><span id="conn-label">연결 중...</span></span>
+    <button class="sound-btn" id="sound-toggle-btn" onclick="toggleSound()">♪ 소리 켜기</button>
+  </div>
+</header>
+
+<!-- ============ MODE SELECT / LANDING ============ -->
 <div class="screen active" id="screen-mode">
-  <div class="glass card flex-center col" style="max-width:480px; text-align:center;">
-    <h1 class="neon-title">✨ 랜덤 이미지 빙고 ✨</h1>
-    <p style="opacity:0.8; margin-bottom:18px;">실시간 참여형 빙고 게임</p>
-    <div class="col" style="width:100%;">
-      <button class="btn big" onclick="goTeacherEntry()">🎤 강사 모드</button>
-      <button class="btn big pink" onclick="goStudentEntry()">🙋 학생 모드</button>
+  <div class="hero">
+    <span class="eyebrow">CLASSROOM MULTIPLAYER</span>
+    <h1 class="hero-title">한 칸씩 가까워지는<br><span class="accent">빙고의 순간.</span></h1>
+    <p class="hero-sub">그림을 발견하고, 빙고를 완성하세요.</p>
+  </div>
+
+  <div class="mode-cards">
+    <div class="glass mode-card">
+      <span class="role-badge host">HOST</span>
+      <h3>강사 모드</h3>
+      <p class="card-desc">이미지를 올리고 나만의 빙고 수업을 여세요.</p>
+
+      <label class="field-label">빙고판 크기</label>
+      <div class="select-wrap">
+        <select id="landing-grid-select">
+          <option value="3">3 × 3 · 9칸</option>
+          <option value="4" selected>4 × 4 · 16칸</option>
+          <option value="5">5 × 5 · 25칸</option>
+        </select>
+      </div>
+
+      <label class="field-label">승리 조건</label>
+      <div class="select-wrap">
+        <select id="landing-goal-select">
+          <option value="1" selected>1빙고</option>
+          <option value="2">2빙고</option>
+          <option value="3">3빙고</option>
+        </select>
+      </div>
+
+      <button class="btn lime big" style="width:100%; margin-top:20px;" onclick="landingCreateRoom()">+ 게임방 만들기</button>
+    </div>
+
+    <div class="glass mode-card">
+      <span class="role-badge player">PLAYER</span>
+      <h3>학생 모드</h3>
+      <p class="card-desc">입장 코드를 입력하고 게임에 참여하세요.</p>
+
+      <label class="field-label">입장 코드</label>
+      <input id="join-room-input" placeholder="4자리 코드" maxlength="4" inputmode="numeric">
+
+      <label class="field-label">이름 / 별명</label>
+      <input id="join-name-input" placeholder="친구들에게 보여줄 이름" maxlength="12">
+
+      <button class="btn purple big" style="width:100%; margin-top:20px;" onclick="joinRoom()">게임 입장하기 →</button>
+      <p class="error-text" id="join-error"></p>
     </div>
   </div>
+
   <footer class="note">본 게임은 Firebase 실시간 데이터베이스로 동작합니다. 여러 기기에서 접속하려면 이 파일을 웹에 호스팅한 주소로 접속해야 합니다.</footer>
 </div>
 
 <!-- ============ TEACHER: SETUP ============ -->
 <div class="screen" id="screen-teacher-setup">
-  <div class="glass card col">
-    <h2>🎛 강사 대시보드 - 방 만들기</h2>
-    <div class="row"><button class="btn" onclick="createRoom()">➕ 새 방 만들기</button>
-    <button class="btn ghost" onclick="showScreen('screen-mode')">← 처음으로</button></div>
-  </div>
-
-  <div class="glass card col hidden" id="teacher-config-card">
+  <div class="glass card col" id="teacher-config-card">
     <div class="flex-center col">
       <span style="opacity:0.7">방 코드</span>
       <div class="room-code" id="room-code-display">----</div>
@@ -236,9 +342,10 @@ footer.note{ margin-top:20px; font-size:12px; opacity:0.55; text-align:center; m
       <div>방 코드: <b id="play-room-code" style="color:var(--neon-yellow);"></b></div>
       <button class="btn small ghost" onclick="openQR()">📱 QR</button>
     </div>
-    <h2>🎯 다음 이미지 뽑기</h2>
-    <div class="called-banner" id="current-call-banner"><span style="opacity:0.6;">아직 뽑지 않았습니다</span></div>
-    <button class="btn big" id="draw-btn" onclick="drawNext()">🎲 다음 뽑기</button>
+    <h2>🎯 이미지를 클릭해서 학생들에게 보여주세요</h2>
+    <div class="called-banner" id="current-call-banner"><span style="opacity:0.6;">아직 보여준 이미지가 없습니다</span></div>
+    <p style="font-size:13px; opacity:0.7; margin:4px 0 0;">아래 이미지 중 하나를 클릭하면 학생들 화면에 나타나요. 학생은 자기 빙고판에서 같은 이미지를 직접 클릭해야 표시됩니다.</p>
+    <div class="teacher-image-grid" id="teacher-image-grid"></div>
     <div class="history-strip" id="history-strip"></div>
   </div>
 
@@ -258,18 +365,6 @@ footer.note{ margin-top:20px; font-size:12px; opacity:0.55; text-align:center; m
 
   <div class="row">
     <button class="btn ghost" onclick="endGame()">🛑 게임 종료</button>
-  </div>
-</div>
-
-<!-- ============ STUDENT: JOIN ============ -->
-<div class="screen" id="screen-student-join">
-  <div class="glass card col flex-center" style="max-width:420px; text-align:center;">
-    <h2>🙋 학생 입장</h2>
-    <input id="join-room-input" placeholder="방 코드 4자리" maxlength="4" inputmode="numeric">
-    <input id="join-name-input" placeholder="이름 (닉네임)" maxlength="12">
-    <button class="btn big" onclick="joinRoom()">입장하기</button>
-    <button class="btn ghost" onclick="showScreen('screen-mode')">← 처음으로</button>
-    <p id="join-error" style="color:var(--neon-pink); font-weight:700;"></p>
   </div>
 </div>
 
@@ -377,6 +472,7 @@ function getAudioCtx(){
   return audioCtx;
 }
 function playTone(freq, dur, delay, type){
+  if(!soundEnabled) return;
   try{
     const ctx = getAudioCtx();
     const osc = ctx.createOscillator();
@@ -401,6 +497,7 @@ function sfxBingo(){
 function sfxRank(){
   [784,988,1174].forEach((f,i)=>playTone(f,0.22,i*0.12,'square'));
 }
+function sfxWrong(){ playTone(180,0.18,0,'sawtooth'); }
 
 /* =================== CONFETTI =================== */
 const confettiCanvas = document.getElementById('confetti-canvas');
@@ -440,17 +537,29 @@ function confettiLoop(){
 }
 confettiLoop();
 
-/* =================== MODE ENTRY =================== */
-function goTeacherEntry(){
+/* =================== SOUND TOGGLE + CONNECTION STATUS =================== */
+let soundEnabled = true;
+function toggleSound(){
+  soundEnabled = !soundEnabled;
+  document.getElementById('sound-toggle-btn').textContent = soundEnabled ? '♪ 소리 켜기' : '♪ 소리 꺼짐';
+}
+db.ref('.info/connected').on('value', snap=>{
+  const connected = snap.val() === true;
+  const dot = document.getElementById('conn-dot');
+  const label = document.getElementById('conn-label');
+  if(dot) dot.classList.toggle('on', connected);
+  if(label) label.textContent = connected ? '실시간 연결됨' : '연결 중...';
+});
+
+/* =================== LANDING: HOST CARD =================== */
+function landingCreateRoom(){
+  gridSize = Number(document.getElementById('landing-grid-select').value);
+  bingoGoal = Number(document.getElementById('landing-goal-select').value);
   isTeacher = true;
   showScreen('screen-teacher-setup');
-}
-function goStudentEntry(){
-  isTeacher = false;
-  const params = new URLSearchParams(location.search);
-  const urlRoom = params.get('room');
-  if(urlRoom) document.getElementById('join-room-input').value = urlRoom;
-  showScreen('screen-student-join');
+  createRoom();
+  selectGrid(gridSize);
+  selectGoal(bingoGoal);
 }
 
 /* =================== BOOT: check URL params + localStorage =================== */
@@ -463,9 +572,9 @@ function goStudentEntry(){
     const saved = getSavedSession();
     if(saved && (!urlRoom || saved.room === urlRoom)){
       attemptRejoin(saved);
-    } else {
-      showScreen('screen-student-join');
-      if(urlRoom) document.getElementById('join-room-input').value = urlRoom;
+    } else if(urlRoom){
+      const input = document.getElementById('join-room-input');
+      if(input) input.value = urlRoom;
     }
   }
 })();
@@ -623,21 +732,34 @@ function imgSrc(id){
 function renderTeacherCallUI(){
   const banner = document.getElementById('current-call-banner');
   if(calledImageIds.length===0){
-    banner.innerHTML = '<span style="opacity:0.6;">아직 뽑지 않았습니다</span>';
+    banner.innerHTML = '<span style="opacity:0.6;">아직 보여준 이미지가 없습니다</span>';
   } else {
     const last = calledImageIds[calledImageIds.length-1];
-    banner.innerHTML = '<img src="'+imgSrc(last)+'"><b style="font-size:20px;">방금 뽑힌 이미지! ('+calledImageIds.length+'/'+allImageIds.length+')</b>';
+    banner.innerHTML = '<img src="'+imgSrc(last)+'"><b style="font-size:20px;">방금 보여준 이미지! ('+calledImageIds.length+'/'+allImageIds.length+')</b>';
   }
   const strip = document.getElementById('history-strip');
   strip.innerHTML = calledImageIds.map(id=>'<img src="'+imgSrc(id)+'">').join('');
-  document.getElementById('draw-btn').disabled = calledImageIds.length >= allImageIds.length;
+  renderTeacherImageGrid();
 }
-function drawNext(){
-  const remaining = allImageIds.filter(id=>!calledImageIds.includes(id));
-  if(remaining.length===0){ toast('모든 이미지를 다 뽑았습니다!'); return; }
-  const pick = remaining[Math.floor(Math.random()*remaining.length)];
+function renderTeacherImageGrid(){
+  const grid = document.getElementById('teacher-image-grid');
+  if(!grid) return;
+  grid.innerHTML = '';
+  localImages.forEach(im=>{
+    const order = calledImageIds.indexOf(im.id);
+    const called = order !== -1;
+    const tile = document.createElement('div');
+    tile.className = 'teacher-tile' + (called ? ' called' : '');
+    if(called) tile.dataset.order = (order+1);
+    tile.innerHTML = '<img src="'+im.src+'">';
+    if(!called){ tile.onclick = ()=>callImage(im.id); }
+    grid.appendChild(tile);
+  });
+}
+function callImage(imageId){
+  if(calledImageIds.includes(imageId)) return;
   const order = calledImageIds.length;
-  db.ref('rooms/'+roomCode+'/calls').push({ imageId: pick, order, calledAt: firebase.database.ServerValue.TIMESTAMP });
+  db.ref('rooms/'+roomCode+'/calls').push({ imageId, order, calledAt: firebase.database.ServerValue.TIMESTAMP });
   sfxCall();
 }
 function renderTeacherStudentList(studentsObj){
@@ -761,10 +883,10 @@ function generateBoard(imgIds, gsize){
 /* =================== STUDENT: REJOIN =================== */
 function attemptRejoin(saved){
   db.ref('rooms/'+saved.room).once('value').then(snap=>{
-    if(!snap.exists()){ clearSession(); showScreen('screen-student-join'); return; }
+    if(!snap.exists()){ clearSession(); showScreen('screen-mode'); return; }
     const roomVal = snap.val();
     const studentsObj = roomVal.students || {};
-    if(!studentsObj[saved.studentId]){ clearSession(); showScreen('screen-student-join'); return; }
+    if(!studentsObj[saved.studentId]){ clearSession(); showScreen('screen-mode'); return; }
     roomCode = saved.room;
     studentId = saved.studentId;
     studentName = saved.name;
@@ -784,7 +906,7 @@ function attemptRejoin(saved){
     toast('다시 접속되었습니다. 이어서 진행합니다!');
     enterStudentFlow(cfg.status || 'waiting');
   }).catch(()=>{
-    showScreen('screen-student-join');
+    showScreen('screen-mode');
   });
 }
 
@@ -833,9 +955,45 @@ function renderBoard(){
     cell.dataset.idx = idx;
     const src = imagesCache[imgId] || '';
     cell.innerHTML = '<img src="'+src+'">';
+    cell.onclick = ()=>studentClickCell(idx);
     board.appendChild(cell);
   });
   updateProgress();
+  updateBoardCallableStates();
+}
+function updateBoardCallableStates(){
+  myBoard.forEach((imgId, idx)=>{
+    const cellEl = document.querySelector('.cell[data-idx="'+idx+'"]');
+    if(!cellEl) return;
+    const callable = calledImageIds.includes(imgId) && !myMarked[idx];
+    cellEl.classList.toggle('callable', callable);
+  });
+}
+function studentClickCell(idx){
+  if(myMarked[idx]) return;
+  const imgId = myBoard[idx];
+  const cellEl = document.querySelector('.cell[data-idx="'+idx+'"]');
+  if(!calledImageIds.includes(imgId)){
+    sfxWrong();
+    if(cellEl){
+      cellEl.classList.add('wrong-shake');
+      setTimeout(()=>cellEl.classList.remove('wrong-shake'), 400);
+    }
+    toast('아직 선생님이 보여주지 않은 이미지예요!');
+    return;
+  }
+  myMarked[idx] = true;
+  if(cellEl){ cellEl.classList.add('marked'); cellEl.classList.remove('callable'); }
+  sfxMark();
+  const newLineCount = checkLines(myMarked, gridSize);
+  const gained = newLineCount > myLineCount;
+  myLineCount = newLineCount;
+  updateProgress();
+  db.ref('rooms/'+roomCode+'/students/'+studentId).update({ marked: myMarked, lineCount: myLineCount });
+  if(gained) sfxLine();
+  if(myLineCount >= bingoGoal && !myRank){
+    claimBingo();
+  }
 }
 function checkLines(marked, gsize){
   let count = 0;
@@ -865,38 +1023,22 @@ function updateProgress(){
 }
 function listenStudentCalls(){
   initialCallSync = true;
-  db.ref('rooms/'+roomCode+'/calls').orderByChild('order').on('child_added', snap=>{
-    const call = snap.val();
-    processCall(call.imageId, initialCallSync);
-  });
-  // after initial batch settle, flip flag
-  db.ref('rooms/'+roomCode+'/calls').once('value').then(()=>{ setTimeout(()=>{ initialCallSync = false; }, 300); });
-}
-function processCall(imageId, silent){
-  const banner = document.getElementById('s-current-call-banner');
-  const src = imagesCache[imageId] || '';
-  banner.innerHTML = '<img src="'+src+'"><b>새로운 이미지가 나왔어요!</b>';
-  let matched = false;
-  myBoard.forEach((id, idx)=>{
-    if(id === imageId && !myMarked[idx]){
-      myMarked[idx] = true;
-      matched = true;
-      const cellEl = document.querySelector('.cell[data-idx="'+idx+'"]');
-      if(cellEl) cellEl.classList.add('marked');
+  let prevLen = 0;
+  db.ref('rooms/'+roomCode+'/calls').on('value', snap=>{
+    const val = snap.val() || {};
+    const arr = Object.values(val).sort((a,b)=>a.order-b.order);
+    calledImageIds = arr.map(c=>c.imageId);
+    const isNew = calledImageIds.length > prevLen;
+    prevLen = calledImageIds.length;
+    if(calledImageIds.length>0){
+      const last = calledImageIds[calledImageIds.length-1];
+      const banner = document.getElementById('s-current-call-banner');
+      banner.innerHTML = '<img src="'+(imagesCache[last]||'')+'"><b>선생님이 보여준 이미지! 내 판에서 같은 그림을 찾아 클릭하세요</b>';
+      if(isNew && !initialCallSync) sfxCall();
     }
+    updateBoardCallableStates();
   });
-  if(matched && !silent) sfxMark();
-  const newLineCount = checkLines(myMarked, gridSize);
-  const gained = newLineCount > myLineCount;
-  myLineCount = newLineCount;
-  updateProgress();
-  db.ref('rooms/'+roomCode+'/students/'+studentId).update({ marked: myMarked, lineCount: myLineCount });
-
-  if(gained && !silent) sfxLine();
-
-  if(myLineCount >= bingoGoal && !myRank){
-    claimBingo();
-  }
+  db.ref('rooms/'+roomCode+'/calls').once('value').then(()=>{ setTimeout(()=>{ initialCallSync = false; }, 300); });
 }
 function claimBingo(){
   const counterRef = db.ref('rooms/'+roomCode+'/rankCounter');
