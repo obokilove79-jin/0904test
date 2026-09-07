@@ -181,6 +181,25 @@ input:focus, select:focus{ border-color:var(--neon-cyan); }
 .badge{ font-size:12px; font-weight:700; padding:3px 9px; border-radius:999px; background:rgba(74,63,107,0.1); }
 .flex-center{ display:flex; align-items:center; justify-content:center; }
 canvas#confetti-canvas{ position:fixed; inset:0; pointer-events:none; z-index:60; }
+.spotlight-overlay{
+  position:fixed; inset:0; z-index:80; display:flex; align-items:center; justify-content:center;
+  background:rgba(74,63,107,0.5); backdrop-filter:blur(2px); -webkit-backdrop-filter:blur(2px);
+  cursor:pointer; opacity:1; transition:opacity .25s ease;
+}
+.spotlight-overlay.hidden{ opacity:0; pointer-events:none; }
+.spotlight-card{
+  display:flex; flex-direction:column; align-items:center; gap:14px;
+  animation: spotlightPop .45s cubic-bezier(.34,1.56,.64,1);
+}
+.spotlight-card img{
+  width:min(58vw, 420px); height:min(58vw, 420px); object-fit:cover; border-radius:28px;
+  border:6px solid #fff; box-shadow:0 0 0 6px rgba(255,255,255,0.4), 0 20px 60px rgba(74,63,107,0.5), 0 0 60px rgba(255,207,92,0.6);
+}
+.spotlight-card .spotlight-label{
+  font-family:'Orbitron', sans-serif; font-weight:900; font-size:20px; color:#fff;
+  background:rgba(232,101,154,0.9); padding:8px 22px; border-radius:999px; letter-spacing:1px;
+}
+@keyframes spotlightPop{ 0%{ transform:scale(0.3) rotate(-6deg); opacity:0; } 60%{ transform:scale(1.08) rotate(2deg); opacity:1; } 100%{ transform:scale(1) rotate(0); opacity:1; } }
 footer.note{ margin-top:20px; font-size:12px; opacity:0.55; text-align:center; max-width:600px; }
 
 /* ---- top bar ---- */
@@ -239,6 +258,13 @@ footer.note{ margin-top:20px; font-size:12px; opacity:0.55; text-align:center; m
 
 <canvas id="confetti-canvas"></canvas>
 <div class="toast" id="toast"></div>
+
+<div class="spotlight-overlay hidden" id="spotlight-overlay" onclick="hideSpotlight()">
+  <div class="spotlight-card">
+    <img id="spotlight-img" src="" alt="">
+    <span class="spotlight-label">✨ 짜잔! ✨</span>
+  </div>
+</div>
 
 <header class="topbar">
   <div class="logo">BINGO<span class="colon">:</span><span class="live">LIVE</span></div>
@@ -452,6 +478,26 @@ let audioCtx = null;
 function showScreen(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+}
+let spotlightTimer = null;
+function showSpotlight(src){
+  if(!src) return;
+  const overlay = document.getElementById('spotlight-overlay');
+  const img = document.getElementById('spotlight-img');
+  if(!overlay || !img) return;
+  img.src = src;
+  overlay.classList.remove('hidden');
+  const card = overlay.querySelector('.spotlight-card');
+  card.style.animation = 'none';
+  void card.offsetWidth;
+  card.style.animation = '';
+  clearTimeout(spotlightTimer);
+  spotlightTimer = setTimeout(hideSpotlight, 2400);
+}
+function hideSpotlight(){
+  const overlay = document.getElementById('spotlight-overlay');
+  if(overlay) overlay.classList.add('hidden');
+  clearTimeout(spotlightTimer);
 }
 function toast(msg){
   const t = document.getElementById('toast');
@@ -716,12 +762,20 @@ function listenTeacherPlay(){
   allImageIds = localImages.map(i=>i.id);
   document.getElementById('play-room-code').textContent = roomCode;
 
+  let teacherPrevCallLen = 0;
+  let teacherInitialSync = true;
   db.ref('rooms/'+roomCode+'/calls').on('value', snap=>{
     const val = snap.val() || {};
     const arr = Object.values(val).sort((a,b)=>a.order-b.order);
     calledImageIds = arr.map(c=>c.imageId);
+    const isNew = calledImageIds.length > teacherPrevCallLen;
+    teacherPrevCallLen = calledImageIds.length;
     renderTeacherCallUI();
+    if(isNew && !teacherInitialSync && calledImageIds.length>0){
+      showSpotlight(imgSrc(calledImageIds[calledImageIds.length-1]));
+    }
   });
+  db.ref('rooms/'+roomCode+'/calls').once('value').then(()=>{ setTimeout(()=>{ teacherInitialSync = false; }, 300); });
 
   db.ref('rooms/'+roomCode+'/students').on('value', snap=>{
     teacherStudentsCache = snap.val() || {};
@@ -1071,7 +1125,10 @@ function listenStudentCalls(){
       const last = calledImageIds[calledImageIds.length-1];
       const banner = document.getElementById('s-current-call-banner');
       banner.innerHTML = '<img src="'+(imagesCache[last]||'')+'"><b>선생님이 보여준 이미지! 내 판에서 같은 그림을 찾아 클릭하세요</b>';
-      if(isNew && !initialCallSync) sfxCall();
+      if(isNew && !initialCallSync){
+        sfxCall();
+        showSpotlight(imagesCache[last]);
+      }
     }
     updateBoardCallableStates();
   });
